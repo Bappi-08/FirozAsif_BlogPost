@@ -1,12 +1,8 @@
-<?php
-// Navigation Bar
-echo '
+<!-- Navigation Bar (No PHP echo) -->
 <nav class="navbar">
     <a href="index.php" class="nav-link">Home</a>
     <a href="post.php" class="nav-link">Create Post</a>
 </nav>
-';
-?>
 
 <style>
     .navbar {
