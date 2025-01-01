@@ -28,10 +28,3 @@ jobs:
           context: .
           push: true
           tags: firoz008/firozasif_blogpost:v1.0
-
-      - name: Deploy to Server
-        run: |
-          ssh user@server-ip << 'EOF'
-          docker pull firoz008/firozasif_blogpost:v1.0
-          docker-compose up -d
-          EOF
