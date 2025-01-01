@@ -2,69 +2,70 @@ name: Docker Image CI for GHCR
 
 on:
   push:
-    branches: [ "main" ]  # Trigger when pushing to the 'main' branch
+    branches: [ "main" ]  # Trigger on push to the 'main' branch
   pull_request:
-    branches: [ "main" ]  # Trigger when a pull request targets 'main'
+    branches: [ "main" ]  # Trigger on pull request to the 'main' branch
 
 env:
-  REGISTRY: ghcr.io  # Set registry to GitHub Container Registry
-  IMAGE_NAME: ${{ github.repository }}  # Use the repository name dynamically for the image name
+  REGISTRY: ghcr.io  # The GitHub Container Registry
+  IMAGE_NAME: ${{ github.repository }}  # Use the repository name dynamically as the image name (e.g., 'owner/repo')
 
 jobs:
   build-and-push-image:
-    runs-on: ubuntu-latest  # Use Ubuntu runner for this job
+    runs-on: ubuntu-latest  # Use an Ubuntu runner for this job
 
     permissions:
-      contents: read  # Read access to repository contents
-      packages: write  # Write access to GitHub Packages (for pushing Docker images)
+      contents: read  # Read permission to fetch the repository contents
+      packages: write  # Write permission to push images to GHCR
 
     steps:
-      # Step 1: Checkout repository code
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3  # Checkout the repository code
 
-      # Step 2: Log in to GitHub Container Registry
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2.4.0
+        with:
+          version: latest  # Ensure the latest version of Buildx is used
+
+      # Log in to GitHub Container Registry using a Personal Access Token (PAT)
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          registry: ghcr.io  # GitHub Container Registry URL
-          username: ${{ github.actor }}  # GitHub actor (username)
-          password: ${{ secrets.GITHUB_TOKEN }}  # GitHub Token for authentication
+          registry: ghcr.io
+          username: ${{ github.actor }}  # Use GitHub actor (username)
+          password: ${{ secrets.GHCR_TOKEN }}  # Use the PAT stored in the repository secrets
 
-      # Step 3: Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2.4.0  # Latest stable version
-        with:
-          version: latest  # Optionally specify the version as 'latest'
-
-      # Step 4: Extract Docker image metadata (tags and labels)
+      # Extract metadata (tags, labels) for Docker image
       - name: Extract metadata (tags, labels) for Docker image
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}  # Image name for the Docker image in GHCR
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}  # Full image name, e.g., 'ghcr.io/owner/repo'
           tags: |
-            type=ref,event=branch  # Tag based on branch name (e.g., 'main', 'feature-branch')
-            type=ref,event=pr  # Tag for pull requests
-            type=semver,pattern={{version}}  # Optional: Tag for semantic versioning
+            type=ref,event=branch  # Tag based on the branch (e.g., 'main', 'feature-branch')
+            type=ref,event=pr  # Tag for pull request
+            type=semver,pattern={{version}}  # Semantic versioning tag (optional)
             type=raw,value=latest  # Always tag as 'latest'
 
-      # Step 5: Build and push Docker image
+      # Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .  # Use current directory as the build context
-          push: true  # Push the image to GHCR
-          tags: ${{ steps.meta.outputs.tags }}  # Use the tags generated from metadata-action
-          labels: ${{ steps.meta.outputs.labels }}  # Use the labels generated from metadata-action
+          context: .  # Use the current directory (where Dockerfile is located)
+          push: true  # Push the built image to GHCR
+          tags: ${{ steps.meta.outputs.tags }}  # Use the generated tags
+          labels: ${{ steps.meta.outputs.labels }}  # Use the generated labels
+          visibility: public  # Set the visibility of the image to public (use 'private' if needed)
 
-  # Optional Kubernetes deployment step
+  # Optional deployment job (if you want to deploy to a Kubernetes cluster)
   # deploy:
   #   needs: build-and-push-image
   #   runs-on: self-hosted
   #   steps:
   #     - name: Deploy to Kubernetes
   #       run: |
+  #         kubectl config use-context your-cluster-context
   #         kubectl apply -f deployment.yaml
   #       env:
-  #         KUBECONFIG: ${{ secrets.KUBE_CONFIG }}
+  #         KUBECONFIG: ${{ secrets.KUBE_CONFIG }}  # Use the Kubernetes config stored in repository secrets
