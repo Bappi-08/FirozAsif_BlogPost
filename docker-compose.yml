@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   app:
     build:
@@ -19,10 +20,11 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD=yourpassword
-      MYSQL_DATABASE=blog
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: blog
     volumes:
       - db_data:/var/lib/mysql
+      - ./blog_database.sql:/docker-entrypoint-initdb.d/blog_database.sql
 
 volumes:
   db_data:
