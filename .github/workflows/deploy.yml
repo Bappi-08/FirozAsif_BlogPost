@@ -2,39 +2,40 @@ name: Docker Image CI for GHCR
 
 on:
   push:
-    branches: [ "main" ]  # Runs the workflow when there's a push to the 'main' branch
+    branches: [ "main" ]  # Triggers on push to the 'main' branch
   pull_request:
-    branches: [ "main" ]  # Runs the workflow on pull requests targeting the 'main' branch
+    branches: [ "main" ]  # Triggers on pull request to the 'main' branch
 
 env:
-  REGISTRY: ghcr.io  # GitHub Container Registry
-  IMAGE_NAME: ${{ github.repository }}  # Dynamic image name based on repository (e.g., 'owner/repo')
+  REGISTRY: ghcr.io  # The GitHub Container Registry
+  IMAGE_NAME: ${{ github.repository }}  # Use the repository name dynamically as the image name (e.g., 'owner/repo')
 
 jobs:
   build-and-push-image:
-    runs-on: ubuntu-latest  # Runs the job on an Ubuntu machine
+    runs-on: ubuntu-latest  # Use an Ubuntu runner for this job
+
     permissions:
-      contents: read  # Read permission to check out the code
+      contents: read  # Read permission to fetch the repository contents
       packages: write  # Write permission to push images to GHCR
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Checkout the code from the repository
+        uses: actions/checkout@v3  # Checkout the repository code
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}  # Log in to GHCR
-          username: ${{ github.actor }}  # GitHub actor (username)
-          password: ${{ secrets.GITHUB_TOKEN }}  # GitHub token (stored in repository secrets)
+          registry: ${{ env.REGISTRY }}  # Login to GHCR
+          username: ${{ github.actor }}  # Use GitHub actor (username)
+          password: ${{ secrets.GITHUB_TOKEN }}  # Use the GitHub token for authentication (automatically provided)
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}  # Set the image name (e.g., ghcr.io/owner/repo)
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}  # Full image name, e.g., 'ghcr.io/owner/repo'
           tags: |
-            type=ref,event=branch  # Tag for branch (e.g., 'main', 'feature-branch')
+            type=ref,event=branch  # Tag based on the branch (e.g., 'main', 'feature-branch')
             type=ref,event=pr  # Tag for pull request
             type=semver,pattern={{version}}  # Semantic versioning tag (optional)
             type=raw,value=latest  # Always tag as 'latest'
@@ -42,19 +43,19 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .  # Current directory, including the Dockerfile
-          push: true  # Push the image to the registry after building
-          tags: ${{ steps.meta.outputs.tags }}  # Use the tags generated in the 'Extract metadata' step
-          labels: ${{ steps.meta.outputs.labels }}  # Use the labels generated in the 'Extract metadata' step
+          context: .  # Use the current directory (where Dockerfile is located)
+          push: true  # Push the built image to GHCR
+          tags: ${{ steps.meta.outputs.tags }}  # Use the generated tags
+          labels: ${{ steps.meta.outputs.labels }}  # Use the generated labels
 
   # Optional deployment job (if you want to deploy to a Kubernetes cluster)
   # deploy:
-  #   needs: build-and-push-image  # Ensure this job runs only after the build job is successful
-  #   runs-on: self-hosted  # You can use a self-hosted runner for deployment
+  #   needs: build-and-push-image  # Only run this job after the build job has completed
+  #   runs-on: self-hosted  # You can run this job on a self-hosted runner (if you have one)
   #   steps:
   #     - name: Deploy to Kubernetes
   #       run: |
   #         kubectl config use-context your-cluster-context
   #         kubectl apply -f deployment.yaml
   #       env:
-  #         KUBECONFIG: ${{ secrets.KUBE_CONFIG }}  # Set the Kubernetes config from secrets
+  #         KUBECONFIG: ${{ secrets.KUBE_CONFIG }}  # Use the Kubernetes config stored in repository secrets
