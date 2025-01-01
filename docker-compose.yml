@@ -18,8 +18,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: blog_project
-      MYSQL_USER: user
-      MYSQL_PASSWORD: userpassword
+      MYSQL_USER: y_uZYhXE@_aut4n
+      MYSQL_PASSWORD: y_uZYhXE@_aut4n
     ports:
       - "3306:3306"
     volumes:

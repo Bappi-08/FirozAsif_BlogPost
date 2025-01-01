@@ -1,7 +1,7 @@
 <?php
 $host = 'db'; // Use the service name in docker-compose.yml
-$user = 'user';
-$password = 'userpassword';
+$user = 'firoz008';
+$password = 'y_uZYhXE@_aut4n';
 $database = 'blog_project';
 
 try {
