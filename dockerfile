@@ -5,7 +5,7 @@ FROM php:8.2-apache
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
 # Copy application files to the container's web root
-COPY public/ /var/www/html/
+COPY . /var/www/html/
 
 # Set working directory to the web root
 WORKDIR /var/www/html
