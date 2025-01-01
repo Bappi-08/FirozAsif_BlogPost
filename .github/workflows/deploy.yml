@@ -2,11 +2,9 @@ name: Docker Image CI for GHCR
 
 on:
   push:
-    branches: 
-      - "main"  # Triggers on push to the 'main' branch
+    branches: [ "main" ]  # Trigger on push to the 'main' branch
   pull_request:
-    branches: 
-      - "main"  # Triggers on pull request to the 'main' branch
+    branches: [ "main" ]  # Trigger on pull request to the 'main' branch
 
 env:
   REGISTRY: ghcr.io  # The GitHub Container Registry
@@ -24,24 +22,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3  # Checkout the repository code
 
+      # Set up Docker Buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v2.4.0
         with:
-          version: latest
+          version: latest  # Ensure the latest version of Buildx is used
 
+      # Log in to GitHub Container Registry using a Personal Access Token (PAT)
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}  # GitHub Container Registry
-          username: ${{ github.actor }}  # GitHub actor (username)
-          password: ${{ secrets.GITHUB_TOKEN }}  # GitHub token for authentication (automatically provided)
+          registry: ghcr.io
+          username: ${{ github.actor }}  # Use GitHub actor (username)
+          password: ${{ secrets.GHCR_TOKEN }}  # Use the PAT stored in the repository secrets
 
-      - name: Build and push Docker image using Docker Compose
-        run: |
-          docker-compose -f docker-compose.yml build  # Build the services defined in docker-compose.yml
-          docker-compose -f docker-compose.yml push  # Push the built images to the registry
-
-      - name: Extract metadata (tags, labels) for Docker
+      # Extract metadata (tags, labels) for Docker image
+      - name: Extract metadata (tags, labels) for Docker image
         id: meta
         uses: docker/metadata-action@v4
         with:
@@ -52,10 +48,20 @@ jobs:
             type=semver,pattern={{version}}  # Semantic versioning tag (optional)
             type=raw,value=latest  # Always tag as 'latest'
 
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .  # Use the current directory (where Dockerfile is located)
+          push: true  # Push the built image to GHCR
+          tags: ${{ steps.meta.outputs.tags }}  # Use the generated tags
+          labels: ${{ steps.meta.outputs.labels }}  # Use the generated labels
+          visibility: public  # Set the visibility of the image to public (use 'private' if needed)
+
   # Optional deployment job (if you want to deploy to a Kubernetes cluster)
   # deploy:
-  #   needs: build-and-push-image  # Only run this job after the build job has completed
-  #   runs-on: self-hosted  # You can run this job on a self-hosted runner (if you have one)
+  #   needs: build-and-push-image
+  #   runs-on: self-hosted
   #   steps:
   #     - name: Deploy to Kubernetes
   #       run: |
