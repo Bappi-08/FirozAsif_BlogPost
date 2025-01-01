@@ -1,13 +1,18 @@
-FROM php:8.1-apache
+# Use the official PHP image with Apache
+FROM php:8.2-apache
 
-# Install required extensions
-RUN docker-php-ext-install pdo pdo_mysql
+# Install required PHP extensions
+RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Copy the project files
-COPY . /var/www/html
+# Copy application files to the container's web root
+COPY public/ /var/www/html/
+
+# Set working directory to the web root
+WORKDIR /var/www/html
+
+# Expose port 80 for Apache
+EXPOSE 80
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html
-
-# Expose port 80
-EXPOSE 80
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
