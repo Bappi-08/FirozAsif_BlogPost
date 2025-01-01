@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   php-apache:
     build:
@@ -8,26 +7,37 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./public:/var/www/html
+      - ./public:/var/www/html/public
+      - ./api:/var/www/html/api
+      - ./includes:/var/www/html/includes
+      - ./style:/var/www/html/style
+      - ./uploads:/var/www/html/uploads
+      - ./index.php:/var/www/html/index.php
+      - ./page.php:/var/www/html/page.php
+      - ./post.php:/var/www/html/post.php
+      - ./000-default.conf:/etc/apache2/sites-available/000-default.conf
     environment:
       - DB_HOST=db
-      - DB_NAME=${MYSQL_DATABASE}
-      - DB_USER=${MYSQL_USER}
-      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - db
     networks:
       - app-network
 
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./blog_database.sql:/docker-entrypoint-initdb.d/blog_database.sql  # Mount the SQL file here for initialization
     networks:
       - app-network
 
